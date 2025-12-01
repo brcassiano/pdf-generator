@@ -11,16 +11,16 @@ def health():
 @app.route('/generate-pdf', methods=['POST'])
 def generate_pdf():
     try:
-        data = request.json
+        data = request.get_json(force=True)
         html_content = data.get('html', '')
-        
+
         if not html_content:
             return {'error': 'HTML content is required'}, 400
-        
-        # Gerar PDF
-        pdf_bytes = HTML(string=html_content).write_pdf()
-        
-        # Retornar PDF
+
+        # Gerar PDF (API compatível com versões novas)
+        html = HTML(string=html_content, base_url=".")
+        pdf_bytes = html.write_pdf()
+
         return send_file(
             io.BytesIO(pdf_bytes),
             mimetype='application/pdf',
