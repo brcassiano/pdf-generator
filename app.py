@@ -1,5 +1,5 @@
 from flask import Flask, request, send_file
-from weasyprint import HTML
+from xhtml2pdf import pisa
 import io
 
 app = Flask(__name__)
@@ -7,6 +7,17 @@ app = Flask(__name__)
 @app.route('/health', methods=['GET'])
 def health():
     return {'status': 'ok'}, 200
+
+def html_to_pdf_bytes(html: str) -> bytes:
+    pdf_io = io.BytesIO()
+    pisa_status = pisa.CreatePDF(
+        html,
+        dest=pdf_io,
+        encoding='utf-8'
+    )
+    if pisa_status.err:
+        raise Exception('Error generating PDF with xhtml2pdf')
+    return pdf_io.getvalue()
 
 @app.route('/generate-pdf', methods=['POST'])
 def generate_pdf():
@@ -17,9 +28,7 @@ def generate_pdf():
         if not html_content:
             return {'error': 'HTML content is required'}, 400
 
-        # Gerar PDF (API compatível com versões novas)
-        html = HTML(string=html_content, base_url=".")
-        pdf_bytes = html.write_pdf()
+        pdf_bytes = html_to_pdf_bytes(html_content)
 
         return send_file(
             io.BytesIO(pdf_bytes),
